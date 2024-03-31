@@ -1,56 +1,37 @@
-import uvicorn
-from fastapi import FastAPI, File, UploadFile
-import cv2
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import tensorflow as tf
 import numpy as np
-from tensorflow.keras.models import load_model
-import os
+from PIL import Image
+import io
+import base64
 
 app = FastAPI()
 
-# Load the model with the correct local file path
-# loaded_model = load_model('best_model.h5')
+# Load the pre-trained TensorFlow model
+try:
+    model = tf.keras.models.load_model("/opt/render/project/src/best_model.h5")
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+except Exception as e:
+    raise HTTPException(status_code=500, detail=f"Error loading the model: {e}")
 
-model_path = os.path.abspath('best_model.h5')
-print(model_path)
-
-# Load the model with the correct absolute file path
-loaded_model = load_model(model_path)
-loaded_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-classes = {
-    0: 'Normal',
-    1: 'Tuberculosis'
-}
+class ImageInput(BaseModel):
+    image: str
 
 @app.post("/predict/")
-async def predict(file: UploadFile = File(...)):
-    # Read image file
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    # Resize image
-    image_resized = cv2.resize(image, (128, 128))
-    
-    # Convert to RGB and normalize
-    image_rgb = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
-    image_normalized = image_rgb / 255.0
-    
-    # Expand dimensions
-    image_expanded = np.expand_dims(image_normalized, axis=0)
-    
-    # Make prediction
-    prediction = loaded_model.predict(image_expanded)
-    predicted_class_prob = prediction[0][0]
-    
-    if predicted_class_prob >= 0.5:
-        predicted_class = 1
-    else:
-        predicted_class = 0
-    
-    predicted_class = classes[predicted_class]
-    
-    return {"Prediction": predicted_class}
+async def predict_image(image_input: ImageInput):
+    # Convert the base64 image string to an image
+    image_data = base64.b64decode(image_input.image)
+    image = Image.open(io.BytesIO(image_data))
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Preprocess the image
+    image = image.resize((224, 224))  # Resize to the input shape of the model
+    image = np.array(image) / 255.0  # Normalize the image
+
+    # Predict the image
+    predictions = model.predict(np.expand_dims(image, axis=0))
+
+    # Get the predicted class
+    predicted_class = np.argmax(predictions, axis=1)[0]
+
+    return {"predicted_class": predicted_class}
