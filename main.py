@@ -15,6 +15,7 @@ print(model_path)
 
 # Load the model with the correct absolute file path
 loaded_model = load_model(model_path)
+loaded_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 classes = {
     0: 'Normal',
