@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -34,8 +35,3 @@ async def predict_image(image_input: ImageInput):
     predicted_class = np.argmax(predictions, axis=1)[0]
 
     return {"predicted_class": predicted_class}
-
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to the Image Classification API"}
-
