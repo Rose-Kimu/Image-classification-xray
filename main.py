@@ -56,6 +56,12 @@ async def predict(file: UploadFile = File(...)):
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the Image Classification API"}
+
+@app.get("/go")
+async def read_go():
+    return {"message": "Welcome to the GO PAGE"}
+
+
     
 
 
