@@ -1,6 +1,7 @@
 # Correct code
 import uvicorn
 from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
