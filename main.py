@@ -6,6 +6,13 @@ import numpy as np
 from tensorflow.keras.models import load_model
 import os
 
+import numpy as np
+
+
+# app = FastAPI()
+#add this part for the CORS policy
+
+
 app = FastAPI()
 
 # Load the model with the correct local file path
@@ -61,7 +68,17 @@ async def read_root():
 async def read_go():
     return {"message": "Welcome to the GO PAGE"}
 
+origins = [
+    "http://localhost:3000"
+]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
     
 
 
